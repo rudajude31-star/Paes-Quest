@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAES Quest</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2D7A3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PAES Quest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --gold:#D4A017;--gold-light:#F5C842;--gold-dark:#A07810;
+    --green:#2D7A3A;--green-light:#4CAF60;--green-pale:#E8F5EB;
+    --soil:#5C3D1E;--soil-light:#8B5E3C;
+    --sky:#1A6B9A;--sky-light:#2E9BD6;--sky-pale:#E3F4FD;
+    --bg:#F9F6F0;--card:#FFFFFF;--border:#E2D9CC;
+    --text:#2C1810;--text2:#6B5040;--text3:#9B8070;
+    --red:#C0392B;--red-pale:#FDECEA;
+    --amber:#E67E22;--amber-pale:#FEF5E7;
+    --radius:14px;--shadow:0 2px 12px rgba(44,24,16,0.10);
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  
+  #app{max-width:420px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  
+  /* SCREENS */
+  .screen{display:none;flex-direction:column;flex:1;animation:fadeIn .25s ease}
+  .screen.active{display:flex}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  
+  /* HOME */
+  .home-header{background:linear-gradient(160deg,#1A4A1F 0%,#2D7A3A 50%,#1A6B2A 100%);padding:28px 20px 32px;position:relative;overflow:hidden}
+  .home-header::before{content:'';position:absolute;top:-20px;right:-20px;width:180px;height:180px;background:rgba(255,255,255,0.05);border-radius:50%}
+  .home-header::after{content:'';position:absolute;bottom:-40px;left:-30px;width:150px;height:150px;background:rgba(255,255,255,0.04);border-radius:50%}
+  .game-title{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:#fff;letter-spacing:-0.5px;position:relative;z-index:1}
+  .game-subtitle{font-size:13px;color:rgba(255,255,255,0.7);margin-top:4px;position:relative;z-index:1}
+  .stats-row{display:flex;gap:10px;margin-top:18px;position:relative;z-index:1}
+  .stat-pill{background:rgba(255,255,255,0.15);border-radius:30px;padding:6px 14px;font-size:13px;color:#fff;font-weight:600;display:flex;align-items:center;gap:5px}
+  .stat-pill span{font-size:16px}
+  
+  .home-body{padding:16px;flex:1}
+  .menu-btn{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;margin-bottom:10px;transition:all .15s;text-align:left}
+  .menu-btn:active{transform:scale(0.98);background:#F0EBE3}
+  .menu-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .menu-btn-text h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text)}
+  .menu-btn-text p{font-size:12px;color:var(--text3);margin-top:2px}
+  .menu-btn.primary{background:var(--green);border-color:var(--green-light)}
+  .menu-btn.primary .menu-btn-text h3{color:#fff}
+  .menu-btn.primary .menu-btn-text p{color:rgba(255,255,255,0.75)}
+  
+  .daily-banner{background:linear-gradient(135deg,#8B4513,#C17F44);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer}
+  .daily-banner h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#fff}
+  .daily-banner p{font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px}
+  
+  /* QUIZ SCREEN */
+  .quiz-header{background:var(--green);padding:14px 16px 16px;color:#fff}
+  .quiz-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .level-badge{background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+  .coin-disp{display:flex;align-items:center;gap:4px;font-weight:600;font-size:14px}
+  .xp-bar-wrap{background:rgba(255,255,255,0.2);border-radius:10px;height:6px;overflow:hidden}
+  .xp-bar{background:var(--gold-light);height:100%;border-radius:10px;transition:width .4s ease}
+  .xp-label{font-size:10px;color:rgba(255,255,255,0.8);margin-top:4px}
+  
+  .quiz-body{padding:16px;flex:1;display:flex;flex-direction:column}
+  .cat-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-pale);color:var(--green);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:12px;border:1px solid rgba(45,122,58,0.2)}
+  .diff-badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;margin-left:6px}
+  .diff-easy{background:#E8F5EB;color:#2D7A3A}
+  .diff-medium{background:var(--amber-pale);color:var(--amber)}
+  .diff-hard{background:var(--red-pale);color:var(--red)}
+  
+  .question-num{font-size:12px;color:var(--text3);margin-bottom:8px}
+  .question-text{font-family:'Syne',sans-serif;font-size:16px;font-weight:600;line-height:1.5;color:var(--text);margin-bottom:20px;min-height:60px}
+  
+  .choices{display:flex;flex-direction:column;gap:8px;flex:1}
+  .choice{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);transition:all .15s;display:flex;align-items:center;gap:10px}
+  .choice:active{transform:scale(0.99)}
+  .choice.correct{background:#E8F5EB;border-color:var(--green);color:var(--green)}
+  .choice.wrong{background:var(--red-pale);border-color:var(--red);color:var(--red)}
+  .choice.disabled{pointer-events:none;opacity:0.6}
+  .choice.eliminated{opacity:0.3;pointer-events:none;text-decoration:line-through}
+  .choice-letter{width:26px;height:26px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;flex-shrink:0;color:var(--text2)}
+  
+  .feedback-box{background:var(--green-pale);border:1px solid rgba(45,122,58,0.25);border-radius:var(--radius);padding:12px 14px;margin-top:12px;font-size:13px;color:var(--green);line-height:1.5;display:none}
+  .feedback-box.wrong{background:var(--red-pale);border-color:rgba(192,57,43,0.25);color:var(--red)}
+  
+  .quiz-footer{padding:12px 16px;background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
+  .hint-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px;transition:all .15s}
+  .hint-btn:active{transform:scale(0.97)}
+  .hint-btn .cost{background:var(--amber-pale);color:var(--amber);border-radius:6px;padding:1px 6px;font-size:10px;font-weight:700}
+  .next-btn{flex:1;background:var(--green);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:none;transition:all .15s}
+  .next-btn:active{transform:scale(0.98)}
+  .next-btn.show{display:block}
+  
+  .streak-badge{position:fixed;top:80px;right:16px;background:var(--amber);color:#fff;border-radius:20px;padding:6px 14px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;z-index:100;animation:popIn .3s cubic-bezier(0.34,1.56,0.64,1);display:none}
+  @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+  .coin-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-80px);background:var(--gold);color:#fff;border-radius:20px;padding:8px 20px;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;z-index:200;opacity:0;pointer-events:none;transition:all .6s ease}
+  .coin-popup.show{opacity:1;transform:translate(-50%,-120px)}
+  
+  /* SHOP */
+  .screen-header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .back-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);padding:4px}
+  .screen-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+  .coins-display{margin-left:auto;background:var(--amber-pale);border-radius:20px;padding:5px 12px;font-weight:700;font-size:13px;color:var(--amber);display:flex;align-items:center;gap:4px}
+  
+  .shop-body{padding:16px;flex:1}
+  .shop-item{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+  .shop-icon{font-size:28px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:12px;flex-shrink:0}
+  .shop-info{flex:1}
+  .shop-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+  .shop-desc{font-size:12px;color:var(--text3);margin-top:2px}
+  .shop-count{font-size:11px;color:var(--green);font-weight:600;margin-top:3px}
+  .buy-btn{background:var(--gold);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
+  .buy-btn:active{transform:scale(0.97)}
+  .buy-btn.owned{background:var(--green-pale);color:var(--green)}
+  
+  /* ACHIEVEMENTS */
+  .ach-body{padding:16px;flex:1;overflow-y:auto}
+  .ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ach-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;text-align:center;transition:all .2s}
+  .ach-card.unlocked{border-color:var(--gold);background:linear-gradient(135deg,#FFFBEE,#FFF8DC)}
+  .ach-icon{font-size:28px;margin-bottom:6px;display:block;filter:grayscale(1) opacity(0.3)}
+  .ach-card.unlocked .ach-icon{filter:none}
+  .ach-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text2)}
+  .ach-card.unlocked .ach-name{color:var(--soil)}
+  .ach-desc{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4}
+  .ach-prog{font-size:10px;font-weight:600;color:var(--green);margin-top:4px}
+  
+  /* PROFILE */
+  .profile-body{padding:16px;flex:1}
+  .profile-hero{background:linear-gradient(135deg,var(--green),#1A4A1F);border-radius:var(--radius);padding:20px;margin-bottom:14px;text-align:center;color:#fff}
+  .avatar{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px}
+  .profile-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
+  .profile-level{font-size:13px;opacity:0.8;margin-top:2px}
+  .xp-progress{margin-top:12px}
+  .xp-progress-bar{background:rgba(255,255,255,0.2);border-radius:10px;height:8px;overflow:hidden;margin-top:6px}
+  .xp-progress-fill{background:var(--gold-light);height:100%;border-radius:10px;transition:width .4s}
+  .xp-progress-label{font-size:11px;opacity:0.8;margin-top:4px;text-align:right}
+  
+  .stat-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+  .stat-card-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
+  .stat-card-lbl{font-size:11px;color:var(--text3);margin-top:3px}
+  
+  .section-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text2);margin-bottom:10px}
+  .cat-progress{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
+  .cat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .cat-name{font-size:13px;font-weight:600;color:var(--text)}
+  .cat-pct{font-size:12px;font-weight:700;color:var(--green)}
+  .cat-bar{background:var(--bg);border-radius:10px;height:5px;overflow:hidden}
+  .cat-bar-fill{background:var(--green);height:100%;border-radius:10px;transition:width .4s}
+  
+  /* TOAST */
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--soil);color:#fff;border-radius:20px;padding:10px 20px;font-size:13px;font-weight:600;z-index:500;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap}
+  .toast.show{opacity:1}
+  
+  /* LEVEL UP OVERLAY */
+  .levelup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:1000}
+  .levelup-overlay.show{display:flex}
+  .levelup-box{background:var(--card);border-radius:20px;padding:30px 24px;text-align:center;width:280px;animation:popIn .4s cubic-bezier(0.34,1.56,0.64,1)}
+  .levelup-emoji{font-size:52px;margin-bottom:10px}
+  .levelup-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--gold)}
+  .levelup-sub{font-size:14px;color:var(--text2);margin-top:6px;line-height:1.5}
+  .levelup-close{background:var(--green);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;width:100%}
+  
+  /* NAV BAR */
+  .nav-bar{display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--border);position:sticky;bottom:0}
+  .nav-item{display:flex;flex-direction:column;align-items:center;padding:8px 4px;cursor:pointer;font-size:10px;color:var(--text3);font-weight:600;gap:3px;transition:color .15s}
+  .nav-item.active{color:var(--green)}
+  .nav-item .nav-icon{font-size:20px}
+  
+  .study-mode-bar{background:var(--sky-pale);border-bottom:1px solid rgba(26,107,154,0.2);padding:8px 16px;font-size:12px;color:var(--sky);font-weight:600;display:flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="home-header">
+      <div class="game-title">🌾 PAES Quest</div>
+      <div class="game-subtitle">Philippine Agricultural Engineering Standards</div>
+      <div class="stats-row">
+        <div class="stat-pill"><span>🏆</span> Lv <span id="h-level">1</span></div>
+        <div class="stat-pill"><span>🪙</span> <span id="h-coins">0</span></div>
+        <div class="stat-pill"><span>🔥</span> <span id="h-streak">0</span></div>
+      </div>
+    </div>
+    <div class="home-body">
+      <div class="daily-banner" onclick="startDaily()">
+        <div style="font-size:26px">📅</div>
+        <div>
+          <h3>Daily Challenge</h3>
+          <p>10 questions · Bonus coins · Fresh every day</p>
+        </div>
+        <div style="margin-left:auto;font-size:18px;opacity:.8">›</div>
+      </div>
+      <div class="menu-btn primary" onclick="showCategorySelect()">
+        <div class="menu-icon" style="background:rgba(255,255,255,0.2)">🎮</div>
+        <div class="menu-btn-text">
+          <h3>Start Quiz</h3>
+          <p>Infinite levels · Earn coins & XP</p>
+        </div>
+        <div style="margin-left:auto;color:rgba(255,255,255,0.8);font-size:18px">›</div>
+      </div>
+      <div class="menu-btn" onclick="showStudyMode()">
+        <div class="menu-icon" style="background:#EBF3FF">📖</div>
+        <div class="menu-btn-text">
+          <h3>Study Mode</h3>
+          <p>No scoring · Learn with explanations</p>
+        </div>
+      </div>
+      <div class="menu-btn" onclick="showScreen('shop')">
+        <div class="menu-icon" style="background:#FFF8DC">🛒</div>
+        <div class="menu-btn-text">
+          <h3>Hint Shop</h3>
+          <p>Buy power-ups with your coins</p>
+        </div>
+      </div>
+      <div class="menu-btn" onclick="showScreen('achievements')">
+        <div class="menu-icon" style="background:#FDECEA">🏅</div>
+        <div class="menu-btn-text">
+          <h3>Achievements</h3>
+          <p>Badges & milestones</p>
+        </div>
+      </div>
+      <div class="menu-btn" onclick="showScreen('profile')">
+        <div class="menu-icon" style="background:#E8F5EB">👤</div>
+        <div class="menu-btn-text">
+          <h3>My Profile</h3>
+          <p>Stats, XP progress & category mastery</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY SELECT (reuses home layout) -->
+  <div class="screen" id="screen-catselect">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div class="screen-title">Choose Category</div>
+    </div>
+    <div class="home-body">
+      <p style="font-size:13px;color:var(--text3);margin-bottom:12px">Select a topic or play All Categories</p>
+      <div id="cat-buttons"></div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="study-mode-bar" id="study-bar" style="display:none">📖 Study Mode — No scoring, just learning</div>
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <div class="level-badge">LV <span id="q-level">1</span></div>
+        <div class="coin-disp">🪙 <span id="q-coins">0</span></div>
+        <button style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px" onclick="exitQuiz()">✕ Exit</button>
+      </div>
+      <div class="xp-bar-wrap"><div class="xp-bar" id="xp-bar" style="width:5%"></div></div>
+      <div class="xp-label">XP: <span id="q-xp">0</span> / <span id="q-xp-next">100</span></div>
+    </div>
+    <div class="quiz-body" id="quiz-body">
+      <div>
+        <span class="cat-badge" id="q-cat">🌿 Category</span><span class="diff-badge" id="q-diff">Easy</span>
+      </div>
+      <div class="question-num" id="q-num">Question 1</div>
+      <div class="question-text" id="q-text">Loading question...</div>
+      <div class="choices" id="q-choices"></div>
+      <div class="feedback-box" id="q-feedback"></div>
+    </div>
+    <div class="quiz-footer">
+      <button class="hint-btn" id="hint-elim" onclick="useHint('elim')">✂️ Eliminate <span class="cost">🪙30</span></button>
+      <button class="hint-btn" id="hint-clue" onclick="useHint('clue')">💡 Clue <span class="cost">🪙20</span></button>
+      <button class="hint-btn" id="hint-skip" onclick="useHint('skip')">⏭ Skip <span class="cost">🪙50</span></button>
+      <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next →</button>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="screen" id="screen-shop">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div class="screen-title">Hint Shop</div>
+      <div class="coins-display">🪙 <span id="shop-coins">0</span></div>
+    </div>
+    <div class="shop-body">
+      <p style="font-size:13px;color:var(--text3);margin-bottom:14px">Earn coins by answering correctly and use them to unlock hints during quizzes.</p>
+      <div id="shop-items"></div>
+    </div>
+  </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="screen" id="screen-achievements">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div class="screen-title">Achievements</div>
+    </div>
+    <div class="ach-body">
+      <div class="ach-grid" id="ach-grid"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen" id="screen-profile">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div class="screen-title">My Profile</div>
+    </div>
+    <div class="profile-body" style="overflow-y:auto">
+      <div class="profile-hero">
+        <div class="avatar">🧑‍🌾</div>
+        <div class="profile-name">AgriEngineer</div>
+        <div class="profile-level">Level <span id="p-level">1</span> · PAES Learner</div>
+        <div class="xp-progress">
+          <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.8"><span>XP Progress</span><span id="p-xp-label">0/100</span></div>
+          <div class="xp-progress-bar"><div class="xp-progress-fill" id="p-xp-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card"><div class="stat-card-val" id="p-answered">0</div><div class="stat-card-lbl">Questions Answered</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="p-correct">0</div><div class="stat-card-lbl">Correct Answers</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="p-coins-total">0</div><div class="stat-card-lbl">Coins Earned</div></div>
+        <div class="stat-card"><div class="stat-card-val" id="p-best-streak">0</div><div class="stat-card-lbl">Best Streak 🔥</div></div>
+      </div>
+      <div class="section-title">Category Mastery</div>
+      <div id="p-cat-progress"></div>
+    </div>
+  </div>
+
+  <!-- NAV BAR -->
+  <div class="nav-bar" id="nav-bar">
+    <div class="nav-item active" onclick="showScreen('home');setNav(0)">
+      <div class="nav-icon">🏠</div><div>Home</div>
+    </div>
+    <div class="nav-item" onclick="showScreen('achievements');setNav(1)">
+      <div class="nav-icon">🏅</div><div>Badges</div>
+    </div>
+    <div class="nav-item" onclick="showScreen('shop');setNav(2)">
+      <div class="nav-icon">🛒</div><div>Shop</div>
+    </div>
+    <div class="nav-item" onclick="showScreen('profile');setNav(3)">
+      <div class="nav-icon">👤</div><div>Profile</div>
+    </div>
+  </div>
+</div>
+
+<div class="streak-badge" id="streak-badge">🔥 x<span id="streak-num">0</span> Streak!</div>
+<div class="coin-popup" id="coin-popup">+<span id="coin-popup-amt">0</span> 🪙</div>
+<div class="toast" id="toast"></div>
+<div class="levelup-overlay" id="levelup-overlay">
+  <div class="levelup-box">
+    <div class="levelup-emoji">🎉</div>
+    <div class="levelup-title">Level Up!</div>
+    <div class="levelup-sub" id="levelup-text">You reached Level 2!<br>Keep mastering PAES!</div>
+    <button class="levelup-close" onclick="closeLevelUp()">Continue →</button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  // PRODUCTION MACHINERY - Easy
+  {id:1,cat:"Production Machinery",diff:"easy",q:"What does PAES stand for?",choices:["Philippine Agricultural Engineering Standards","Philippine Agricultural Equipment Specifications","Philippine Agro-Engineering Schemes","Philippine Agricultural Extension Services"],ans:0,exp:"PAES stands for Philippine Agricultural Engineering Standards — official standards governing agricultural machinery, structures, and systems in the Philippines."},
+  {id:2,cat:"Production Machinery",diff:"easy",q:"Which organization is responsible for developing and maintaining PAES in the Philippines?",choices:["DOST","PAHRDF","BAFPS","PhilMech"],ans:3,exp:"PhilMech (Philippine Center for Postharvest Development and Mechanization) is the primary agency responsible for developing PAES related to agricultural machinery and mechanization."},
+  {id:3,cat:"Production Machinery",diff:"easy",q:"A four-wheel tractor used in rice field operations is primarily classified under which PAES category?",choices:["Postharvest Equipment","Farm Power and Machinery","Irrigation Equipment","Farm Structures"],ans:1,exp:"Four-wheel tractors used in field operations are classified under Farm Power and Machinery in PAES, covering tillage and land preparation equipment."},
+  {id:4,cat:"Production Machinery",diff:"medium",q:"According to PAES, the rated power of a two-wheel tractor should be measured at what condition?",choices:["Net power at flywheel","Gross power at engine","PTO shaft power at rated speed","Drawbar pull at rated RPM"],ans:2,exp:"PAES specifies that rated power for two-wheel tractors is measured at the PTO shaft at rated engine speed under standard test conditions."},
+  {id:5,cat:"Production Machinery",diff:"medium",q:"The PAES standard for hand tractors (walking tractors) typically requires that field efficiency must be at least:",choices:["55%","65%","70%","80%"],ans:1,exp:"PAES standards for walking/hand tractors generally require minimum field efficiency of 65% under standard operating conditions for paddy field preparation."},
+  {id:6,cat:"Production Machinery",diff:"hard",q:"In PAES performance testing of rice combine harvesters, which parameter defines the ratio of grain recovered to total grain available in the field?",choices:["Threshing efficiency","Harvesting efficiency","Grain recovery rate","Collection efficiency"],ans:2,exp:"Grain recovery rate is the PAES-defined parameter for the ratio of grain actually recovered to total grain available, directly measuring harvest losses."},
+  {id:7,cat:"Production Machinery",diff:"hard",q:"Under PAES standards, maximum allowable grain loss for a rice reaper-binder during normal field operation is typically:",choices:["1%","2%","3%","5%"],ans:1,exp:"PAES sets maximum allowable total grain loss at approximately 2% for rice reaper-binders, encompassing header, conveying, and binding losses combined."},
+  
+  // FARM STRUCTURES - Easy/Medium/Hard
+  {id:8,cat:"Farm Structures",diff:"easy",q:"According to PAES, what is the minimum floor area recommended for a single-family farm dwelling in agricultural settings?",choices:["12 sq.m","18 sq.m","24 sq.m","36 sq.m"],ans:1,exp:"PAES guidelines for farm dwellings recommend a minimum floor area of 18 sq.m for a single-family unit to ensure basic living standards for farm workers."},
+  {id:9,cat:"Farm Structures",diff:"easy",q:"What type of roof pitch is generally recommended for farm buildings in typhoon-prone areas of the Philippines?",choices:["Flat roof (0–5°)","Low pitch (10–15°)","Moderate pitch (20–30°)","Steep pitch (35–45°)"],ans:2,exp:"PAES recommends moderate pitch roofs (20–30°) for farm buildings in typhoon areas — steep enough for drainage but not so steep as to present excessive wind resistance."},
+  {id:10,cat:"Farm Structures",diff:"medium",q:"In PAES standards for grain storage structures, what is the recommended maximum moisture content of palay (rough rice) before storage to prevent mold growth?",choices:["10%","12%","14%","16%"],ans:2,exp:"PAES specifies 14% moisture content as the safe maximum for palay (rough rice) storage. Above this threshold, mold, fungi, and insect activity rapidly increase."},
+  {id:11,cat:"Farm Structures",diff:"medium",q:"What structural load combination must farm building designs consider according to PAES?",choices:["Dead load only","Dead + live loads","Dead + live + wind loads","Dead + live + wind + seismic loads"],ans:3,exp:"PAES requires farm building structural design to consider the full combination: dead load, live load, wind load, and seismic load — especially important in the Philippine context with typhoons and earthquakes."},
+  {id:12,cat:"Farm Structures",diff:"hard",q:"Under PAES for poultry house design, the recommended minimum air space per bird for broilers in a conventional open-sided house is:",choices:["0.05 m³/bird","0.08 m³/bird","0.10 m³/bird","0.15 m³/bird"],ans:1,exp:"PAES poultry housing standards specify a minimum of 0.08 m³ of air space per broiler bird in conventional open-sided Philippine houses to ensure adequate ventilation and welfare."},
+  
+  // IRRIGATION SYSTEMS
+  {id:13,cat:"Irrigation Systems",diff:"easy",q:"What is the basic unit of irrigation water measurement used in Philippine agricultural practice per PAES?",choices:["Liters per second (L/s)","Cubic meters per hour (m³/hr)","Gallons per minute (GPM)","Acre-feet"],ans:0,exp:"PAES and Philippine irrigation engineering standardize water flow measurement in liters per second (L/s), consistent with the metric system adopted nationally."},
+  {id:14,cat:"Irrigation Systems",diff:"easy",q:"Which type of irrigation system is most commonly recommended by PAES for water-scarce upland areas?",choices:["Surface flood irrigation","Sprinkler irrigation","Drip/micro irrigation","Furrow irrigation"],ans:2,exp:"For water-scarce upland conditions, PAES recommends drip/micro irrigation as it achieves the highest water use efficiency (85–95%) compared to surface methods (40–70%)."},
+  {id:15,cat:"Irrigation Systems",diff:"medium",q:"In designing a farm irrigation system under PAES, what is the typical conveyance efficiency assumed for unlined earthen canals?",choices:["50–60%","65–75%","80–85%","90–95%"],ans:1,exp:"PAES engineering guidelines assume conveyance efficiency of 65–75% for unlined earthen canals, accounting for seepage and evaporation losses typical in Philippine field conditions."},
+  {id:16,cat:"Irrigation Systems",diff:"medium",q:"The Irrigation Water Requirement (IWR) of a crop is computed as:",choices:["Evapotranspiration + Rainfall","Evapotranspiration – Effective Rainfall","Effective Rainfall – Evapotranspiration","Rainfall + Percolation"],ans:1,exp:"Per PAES and irrigation engineering principles, IWR = Crop Evapotranspiration (ETc) minus Effective Rainfall — representing the water deficit that must be supplied by the irrigation system."},
+  {id:17,cat:"Irrigation Systems",diff:"hard",q:"In PAES-guided pump irrigation system design, the total dynamic head (TDH) is computed as the sum of:",choices:["Static head only","Static head + friction losses","Static head + friction losses + velocity head + minor losses","Static head + minor losses only"],ans:2,exp:"TDH in PAES pump system design = Static head + friction head losses + velocity head + minor (fittings/valves) losses. All four components must be included for accurate pump selection."},
+  
+  // POSTHARVEST ENGINEERING
+  {id:18,cat:"Postharvest Engineering",diff:"easy",q:"What is the primary purpose of mechanical drying in PAES postharvest standards?",choices:["Improve grain taste","Reduce grain moisture to safe storage level","Increase grain weight","Kill insects only"],ans:1,exp:"PAES postharvest standards specify that mechanical drying's primary purpose is to reduce grain moisture content to safe storage levels (≤14% for palay) to prevent spoilage."},
+  {id:19,cat:"Postharvest Engineering",diff:"easy",q:"Which type of dryer is classified as a batch-type dryer in PAES postharvest equipment standards?",choices:["Recirculating batch dryer","Continuous flow dryer","Rotary drum dryer","Belt conveyor dryer"],ans:0,exp:"Recirculating batch dryers are classified under batch-type dryers in PAES — grain is loaded in a fixed batch, dried, and discharged before the next batch is loaded."},
+  {id:20,cat:"Postharvest Engineering",diff:"medium",q:"According to PAES for grain milling, head rice recovery rate is defined as the percentage of:",choices:["Total rough rice that becomes any milled rice","Milled rice that is unbroken (whole grain) relative to paddy input","Bran removed during whitening","Broken rice relative to total milled output"],ans:1,exp:"PAES defines head rice recovery as the weight of unbroken milled rice (whole grains) as a percentage of total rough rice (paddy) input — a key quality performance metric for rice mills."},
+  {id:21,cat:"Postharvest Engineering",diff:"medium",q:"The maximum allowable milling recovery for a commercial rice mill as referenced in PAES standards is approximately:",choices:["55%","60%","65%","70%"],ans:2,exp:"PAES benchmarks commercial rice mill milling recovery at approximately 65% — meaning 65 kg of milled rice from 100 kg of paddy — under standard conditions."},
+  {id:22,cat:"Postharvest Engineering",diff:"hard",q:"In PAES grain dryer performance testing, the Specific Energy Consumption (SEC) is expressed in units of:",choices:["kW per hour","MJ per kg of water evaporated","kcal per kg of dry grain","kWh per tonne of grain"],ans:1,exp:"PAES specifies SEC for grain dryers in MJ per kg of water evaporated — this normalizes energy efficiency across dryers of different capacities and fuel types."},
+  
+  // AGRICULTURAL MECHANIZATION SAFETY
+  {id:23,cat:"Agricultural Mechanization Safety",diff:"easy",q:"According to PAES safety standards, what must be installed on all exposed rotating parts of agricultural machinery?",choices:["Warning labels only","Safety guards/shields","Speed limiters","Emergency stops only"],ans:1,exp:"PAES mandates that all exposed rotating parts (PTO shafts, gears, pulleys, belts) must have physical safety guards/shields installed to prevent operator contact injuries."},
+  {id:24,cat:"Agricultural Mechanization Safety",diff:"easy",q:"PAES requires that agricultural machinery operators must be provided with which safety equipment when operating tractors?",choices:["Only gloves","ROPS (Roll-Over Protection Structure) on tractors","Only hearing protection","Eye protection only"],ans:1,exp:"PAES safety standards require ROPS (Roll-Over Protection Structures) on tractors to protect operators in rollover accidents — a leading cause of fatal farm machinery injuries."},
+  {id:25,cat:"Agricultural Mechanization Safety",diff:"medium",q:"What is the maximum allowable sound pressure level for prolonged operator exposure (8 hours) per PAES machinery safety standards?",choices:["80 dB(A)","85 dB(A)","90 dB(A)","95 dB(A)"],ans:1,exp:"PAES sets 85 dB(A) as the maximum 8-hour time-weighted average noise exposure, consistent with international occupational health standards and OSHS Philippines."},
+  {id:26,cat:"Agricultural Mechanization Safety",diff:"hard",q:"Under PAES safety evaluation of pesticide application equipment, drift potential is assessed through measurement of:",choices:["Application rate only","Droplet size spectrum (VMD) and spray pattern","Tank pressure only","Nozzle wear rate"],ans:1,exp:"PAES pesticide sprayer safety standards require assessment of Droplet Size Spectrum (expressed as VMD — Volume Median Diameter) and spray pattern uniformity to evaluate drift risk and efficacy."},
+  
+  // POWER AND MACHINERY SYSTEMS
+  {id:27,cat:"Power and Machinery Systems",diff:"easy",q:"In PAES, what does PTO stand for in the context of tractor equipment?",choices:["Power Transfer Output","Power Take-Off","Primary Tractor Operation","Pulley Transmission Output"],ans:1,exp:"PTO stands for Power Take-Off — the mechanical shaft on tractors that transfers engine power to attached implements. PAES standardizes PTO speed, torque, and connection dimensions."},
+  {id:28,cat:"Power and Machinery Systems",diff:"medium",q:"PAES standardizes the PTO speed for agricultural tractors. The standard PTO speed for Category 1 (small tractors) is:",choices:["450 RPM","540 RPM","750 RPM","1000 RPM"],ans:1,exp:"PAES and ISO standards specify 540 RPM as the standard PTO speed for Category 1 tractors (generally under 65 kW), ensuring implement compatibility across manufacturers."},
+  {id:29,cat:"Power and Machinery Systems",diff:"medium",q:"The drawbar pull efficiency of a tractor operating in a paddy field is typically lower than on hard ground because of:",choices:["Higher fuel consumption","Increased wheel slip due to soft soil conditions","Higher engine temperature","Reduced hydraulic pressure"],ans:1,exp:"In paddy (wet, soft) field conditions, tractor wheel slip increases significantly, reducing tractive efficiency and drawbar pull — a key consideration in PAES tractor performance evaluation."},
+  {id:30,cat:"Power and Machinery Systems",diff:"hard",q:"According to PAES performance standards, the draft requirement (kN/m) for primary tillage with a moldboard plow in clay loam soil is approximately:",choices:["2–4 kN/m","5–8 kN/m","10–15 kN/m","18–25 kN/m"],ans:1,exp:"PAES and Philippine tillage engineering data specify draft requirements of approximately 5–8 kN per meter width for moldboard plowing in clay loam soils under typical Philippine field conditions."},
+  
+  // SOIL AND WATER ENGINEERING
+  {id:31,cat:"Soil and Water Engineering",diff:"easy",q:"What is the primary purpose of soil conservation measures under PAES soil and water engineering standards?",choices:["Increase chemical fertilizer use","Prevent soil erosion and maintain productivity","Improve crop genetics","Reduce water irrigation need only"],ans:1,exp:"PAES soil and water engineering standards focus primarily on preventing soil erosion and maintaining long-term soil productivity through structural and vegetative conservation measures."},
+  {id:32,cat:"Soil and Water Engineering",diff:"easy",q:"Which type of terrace is most recommended by PAES for steep upland farms (15–50% slope) in the Philippines?",choices:["Bench terrace","Contour terrace","Broad-base terrace","Step terrace"],ans:0,exp:"PAES recommends bench terraces for slopes of 15–50% — they create level or nearly level planting surfaces by cutting and filling across the hillside, dramatically reducing erosion."},
+  {id:33,cat:"Soil and Water Engineering",diff:"medium",q:"The Universal Soil Loss Equation (USLE) is used in PAES soil conservation planning to estimate:",choices:["Soil nutrient content","Annual average soil loss from rainfall erosion","Groundwater recharge rate","Soil compaction level"],ans:1,exp:"The USLE (A = R·K·LS·C·P) is applied in PAES-guided conservation planning to estimate annual average soil loss (tons/ha/yr) from water erosion, considering rainfall, soil, slope, and management factors."},
+  {id:34,cat:"Soil and Water Engineering",diff:"medium",q:"In PAES watershed management, what is the recommended maximum slope gradient for contour farming without terracing?",choices:["5%","8%","12%","18%"],ans:1,exp:"PAES and Philippine upland farming guidelines recommend contour farming (without terracing) as effective up to approximately 8% slope — beyond this, structural measures like terraces are needed."},
+  {id:35,cat:"Soil and Water Engineering",diff:"hard",q:"When designing a farm pond for water harvesting under PAES standards, the minimum freeboard above spillway crest is typically set at:",choices:["0.1 m","0.3 m","0.5 m","1.0 m"],ans:2,exp:"PAES farm pond design standards specify a minimum freeboard of 0.5 m above the spillway crest to provide safety margin against wave action, unexpected rainfall surges, and embankment settlement."},
+  {id:36,cat:"Soil and Water Engineering",diff:"hard",q:"The Rational Method formula Q = CiA is used in PAES drainage design. What does the runoff coefficient 'C' represent?",choices:["Crop coefficient for evapotranspiration","Ratio of peak runoff to average rainfall intensity","Fraction of rainfall that becomes surface runoff","Soil infiltration capacity coefficient"],ans:2,exp:"In the Rational Method, 'C' is the dimensionless runoff coefficient representing the fraction of total rainfall that becomes surface runoff — influenced by land use, soil type, and slope, ranging from 0.1 (forests) to 0.95 (impervious surfaces)."},
+  
+  // Additional questions for variety
+  {id:37,cat:"Production Machinery",diff:"easy",q:"What is the main function of a rice thresher in postharvest operations?",choices:["Drying rice stalks","Separating grain from the straw","Milling paddy to white rice","Planting rice seedlings"],ans:1,exp:"A rice thresher separates the grain (palay) from the straw by mechanical impact or rubbing action. PAES classifies threshers under postharvest machinery with specific threshing efficiency standards."},
+  {id:38,cat:"Farm Structures",diff:"easy",q:"What material is most commonly specified in PAES for low-cost farm building roofing in the Philippines?",choices:["Clay tiles","GI (Galvanized Iron) sheets","Bamboo thatch","Asphalt shingles"],ans:1,exp:"PAES and Philippine farm building practice commonly specify GI (Galvanized Iron) corrugated sheets for roofing due to their availability, durability in tropical climates, and cost-effectiveness."},
+  {id:39,cat:"Irrigation Systems",diff:"easy",q:"What does 'duty of water' mean in irrigation engineering?",choices:["The quality of irrigation water","The area of land irrigated per unit of water flow","The depth of water applied per irrigation","The frequency of irrigation"],ans:1,exp:"Duty of water is defined as the area of land (hectares) that can be irrigated by a continuous unit flow (usually 1 L/s or 1 m³/s) of water. It is a key design parameter in PAES irrigation planning."},
+  {id:40,cat:"Postharvest Engineering",diff:"easy",q:"What does the term 'hermetic storage' mean in PAES postharvest standards?",choices:["Storage in refrigerated rooms","Airtight storage that limits oxygen and prevents insect respiration","Storage with chemical fumigants","Storage in open-air granaries"],ans:1,exp:"Hermetic storage refers to airtight grain storage where oxygen is depleted by grain and insect respiration, creating conditions lethal to insects without chemicals. PAES promotes this as an eco-friendly postharvest method."},
+];
+
+const CATEGORIES = [
+  {name:"All Categories",icon:"🌾",color:"#2D7A3A"},
+  {name:"Production Machinery",icon:"🚜",color:"#5C3D1E"},
+  {name:"Farm Structures",icon:"🏚️",color:"#8B5E3C"},
+  {name:"Irrigation Systems",icon:"💧",color:"#1A6B9A"},
+  {name:"Postharvest Engineering",icon:"🌾",color:"#4A7A1E"},
+  {name:"Agricultural Mechanization Safety",icon:"⚠️",color:"#C0392B"},
+  {name:"Power and Machinery Systems",icon:"⚙️",color:"#6C3483"},
+  {name:"Soil and Water Engineering",icon:"🌊",color:"#1A5276"},
+];
+
+const SHOP_ITEMS = [
+  {id:"elim",name:"Eliminate 2 Wrong",icon:"✂️",desc:"Remove 2 incorrect choices",cost:30,countKey:"elimCount"},
+  {id:"clue",name:"Keyword Clue",icon:"💡",desc:"Get a PAES keyword hint",cost:20,countKey:"clueCount"},
+  {id:"skip",name:"Skip Question",icon:"⏭",desc:"Skip without penalty",cost:50,countKey:"skipCount"},
+  {id:"explain",name:"Full Explanation",icon:"📝",desc:"Reveal complete answer explanation",cost:40,countKey:"explainCount"},
+];
+
+const ACHIEVEMENTS = [
+  {id:"rookie",name:"PAES Rookie",icon:"🌱",desc:"Answer 10 questions correctly",req:10,type:"correct",val:10},
+  {id:"learner",name:"Eager Learner",icon:"📚",desc:"Answer 50 questions correctly",req:50,type:"correct",val:50},
+  {id:"scholar",name:"PAES Scholar",icon:"🎓",desc:"Answer 100 questions correctly",req:100,type:"correct",val:100},
+  {id:"streak10",name:"Hot Streak",icon:"🔥",desc:"10 correct answers in a row",req:10,type:"streak",val:10},
+  {id:"streak20",name:"Streak Master",icon:"⚡",desc:"20 correct answers in a row",req:20,type:"streak",val:20},
+  {id:"coins100",name:"Coin Saver",icon:"🪙",desc:"Earn 100 coins total",req:100,type:"coinsTotal",val:100},
+  {id:"coins500",name:"Coin Hoarder",icon:"💰",desc:"Earn 500 coins total",req:500,type:"coinsTotal",val:500},
+  {id:"coins1000",name:"Coin Collector",icon:"🏦",desc:"Earn 1000 coins total",req:1000,type:"coinsTotal",val:1000},
+  {id:"mach5",name:"Machinery Novice",icon:"🚜",desc:"Answer 5 Production Machinery questions correctly",req:5,type:"catCorrect",cat:"Production Machinery",val:5},
+  {id:"mach20",name:"Machinery Expert",icon:"🏆",desc:"Answer 20 Production Machinery questions correctly",req:20,type:"catCorrect",cat:"Production Machinery",val:20},
+  {id:"irr5",name:"Water Warden",icon:"💧",desc:"Answer 5 Irrigation questions correctly",req:5,type:"catCorrect",cat:"Irrigation Systems",val:5},
+  {id:"struct5",name:"Farm Builder",icon:"🏗️",desc:"Answer 5 Farm Structures questions correctly",req:5,type:"catCorrect",cat:"Farm Structures",val:5},
+  {id:"post5",name:"Harvest Hero",icon:"🌾",desc:"Answer 5 Postharvest questions correctly",req:5,type:"catCorrect",cat:"Postharvest Engineering",val:5},
+  {id:"soil5",name:"Soil Guardian",icon:"🌱",desc:"Answer 5 Soil & Water questions correctly",req:5,type:"catCorrect",cat:"Soil and Water Engineering",val:5},
+  {id:"lvl5",name:"Level Up! x5",icon:"⭐",desc:"Reach Level 5",req:5,type:"level",val:5},
+  {id:"lvl10",name:"PAES Veteran",icon:"🥇",desc:"Reach Level 10",req:10,type:"level",val:10},
+];
+
+let state = {
+  coins:0, xp:0, level:1, streak:0, bestStreak:0,
+  totalAnswered:0, totalCorrect:0, totalCoinsEarned:0,
+  catCorrect:{},catAnswered:{},
+  achievements:{},
+  hints:{elimCount:3,clueCount:5,skipCount:2,explainCount:3},
+  dailyDone:false, dailyDate:"",
+};
+
+function loadState(){
+  try{
+    const s = localStorage.getItem("paesquest_state");
+    if(s) state = Object.assign(state, JSON.parse(s));
+  }catch(e){}
+}
+function saveState(){
+  try{ localStorage.setItem("paesquest_state", JSON.stringify(state)); }catch(e){}
+}
+
+loadState();
+
+let currentQ = null, selectedCat = "All Categories", answered = false, isStudyMode = false, isDaily = false;
+let qIndex = 0, usedQIds = new Set();
+
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const navScreens = ['home','achievements','shop','profile'];
+  const ni = navScreens.indexOf(name);
+  if(ni>=0) setNav(ni);
+  if(name==='home') updateHomeStats();
+  if(name==='shop') renderShop();
+  if(name==='achievements') renderAchievements();
+  if(name==='profile') renderProfile();
+}
+function setNav(i){
+  document.querySelectorAll('.nav-item').forEach((el,idx)=>el.classList.toggle('active',idx===i));
+}
+function updateHomeStats(){
+  document.getElementById('h-level').textContent = state.level;
+  document.getElementById('h-coins').textContent = state.coins;
+  document.getElementById('h-streak').textContent = state.streak;
+}
+
+function showCategorySelect(){
+  const container = document.getElementById('cat-buttons');
+  container.innerHTML = '';
+  CATEGORIES.forEach(c=>{
+    const btn = document.createElement('div');
+    btn.className = 'menu-btn';
+    btn.innerHTML = `<div class="menu-icon" style="background:${c.color}22;font-size:22px">${c.icon}</div><div class="menu-btn-text"><h3>${c.name}</h3><p>Tap to start quiz</p></div>`;
+    btn.onclick = ()=>{selectedCat=c.name; isStudyMode=false; isDaily=false; startQuiz();};
+    container.appendChild(btn);
+  });
+  showScreen('catselect');
+}
+function showStudyMode(){
+  isStudyMode = true; selectedCat = "All Categories"; isDaily = false;
+  startQuiz();
+}
+function startDaily(){
+  const today = new Date().toDateString();
+  if(state.dailyDate===today&&state.dailyDone){showToast("Daily Challenge already completed today! Come back tomorrow 📅");return;}
+  isStudyMode = false; isDaily = true; selectedCat = "All Categories";
+  state.dailyDate = today; state.dailyDone = false;
+  qIndex = 0; usedQIds = new Set();
+  startQuiz();
+}
+function startQuiz(){
+  usedQIds = new Set(); qIndex = 0; answered = false;
+  document.getElementById('study-bar').style.display = isStudyMode ? 'flex' : 'none';
+  updateQuizHeader();
+  loadQuestion();
+  showScreen('quiz');
+  document.getElementById('nav-bar').style.display = 'none';
+}
+function exitQuiz(){
+  document.getElementById('nav-bar').style.display = '';
+  showScreen('home');
+}
+
+function getFilteredQuestions(){
+  let pool = QUESTIONS;
+  if(selectedCat!=="All Categories") pool = pool.filter(q=>q.cat===selectedCat);
+  // difficulty weighting based on level
+  if(state.level<=3) pool = pool.filter(q=>q.diff!=="hard").concat(pool.filter(q=>q.diff==="hard").slice(0,1));
+  return pool;
+}
+function getNextQuestion(){
+  let pool = getFilteredQuestions();
+  let available = pool.filter(q=>!usedQIds.has(q.id));
+  if(available.length===0){usedQIds=new Set(); available = pool;}
+  const shuffle = [...available].sort(()=>Math.random()-0.5);
+  return shuffle[0];
+}
+
+function loadQuestion(){
+  currentQ = getNextQuestion();
+  if(!currentQ) return;
+  usedQIds.add(currentQ.id);
+  answered = false;
+  qIndex++;
+  
+  const diffClass = {easy:'diff-easy',medium:'diff-medium',hard:'diff-hard'}[currentQ.diff]||'diff-easy';
+  const catInfo = CATEGORIES.find(c=>c.name===currentQ.cat)||{icon:"🌾"};
+  document.getElementById('q-cat').textContent = catInfo.icon+' '+currentQ.cat;
+  document.getElementById('q-diff').className = 'diff-badge '+diffClass;
+  document.getElementById('q-diff').textContent = currentQ.diff.charAt(0).toUpperCase()+currentQ.diff.slice(1);
+  document.getElementById('q-num').textContent = 'Question '+qIndex+(isDaily?' / 10':'');
+  document.getElementById('q-text').textContent = currentQ.q;
+  
+  const choicesEl = document.getElementById('q-choices');
+  choicesEl.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  const shuffledChoices = currentQ.choices.map((c,i)=>({text:c,origIdx:i})).sort(()=>Math.random()-0.5);
+  currentQ._shuffled = shuffledChoices;
+  shuffledChoices.forEach((c,i)=>{
+    const div = document.createElement('div');
+    div.className = 'choice';
+    div.innerHTML = `<div class="choice-letter">${letters[i]}</div><div>${c.text}</div>`;
+    div.onclick = ()=>selectChoice(c.origIdx, div);
+    choicesEl.appendChild(div);
+  });
+  
+  document.getElementById('q-feedback').style.display = 'none';
+  document.getElementById('next-btn').classList.remove('show');
+  document.querySelectorAll('.hint-btn').forEach(b=>b.style.display='');
+  updateQuizHeader();
+}
+
+function selectChoice(origIdx, el){
+  if(answered) return;
+  answered = true;
+  const correct = origIdx===currentQ.ans;
+  const choices = document.querySelectorAll('.choice');
+  
+  choices.forEach((ch,i)=>{
+    ch.classList.add('disabled');
+    const orig = currentQ._shuffled[i].origIdx;
+    if(orig===currentQ.ans) ch.classList.add('correct');
+    else if(ch===el && !correct) ch.classList.add('wrong');
+  });
+  
+  const feedback = document.getElementById('q-feedback');
+  feedback.style.display = 'block';
+  
+  if(correct){
+    feedback.className = 'feedback-box';
+    feedback.textContent = '✅ Correct! '+currentQ.exp;
+    if(!isStudyMode){
+      state.streak++;
+      if(state.streak>state.bestStreak) state.bestStreak=state.streak;
+      const coins = getCoinReward();
+      const xpAmt = getXPReward();
+      state.coins+=coins; state.totalCoinsEarned+=coins;
+      state.xp+=xpAmt;
+      state.totalCorrect++;
+      state.catCorrect[currentQ.cat]=(state.catCorrect[currentQ.cat]||0)+1;
+      checkLevelUp();
+      showCoinPopup(coins);
+      if(state.streak>=5) showStreakBadge();
+      checkAchievements();
+    }
+  } else {
+    feedback.className = 'feedback-box wrong';
+    feedback.textContent = '❌ Incorrect. '+currentQ.exp;
+    if(!isStudyMode){ state.streak=0; }
+  }
+  
+  if(!isStudyMode){
+    state.totalAnswered++;
+    state.catAnswered[currentQ.cat]=(state.catAnswered[currentQ.cat]||0)+1;
+  }
+  
+  document.querySelectorAll('.hint-btn').forEach(b=>b.style.display='none');
+  document.getElementById('next-btn').classList.add('show');
+  
+  if(isDaily && qIndex>=10){
+    document.getElementById('next-btn').textContent = 'Finish Daily →';
+    state.dailyDone=true;
+  }
+  
+  saveState();
+  updateQuizHeader();
+  updateHomeStats();
+}
+
+function getCoinReward(){
+  const base={easy:10,medium:20,hard:35}[currentQ.diff]||10;
+  const mult = state.streak>=10?3:state.streak>=5?2:state.streak>=3?1.5:1;
+  const levelBonus = 1+(state.level*0.1);
+  const dailyBonus = isDaily?2:1;
+  return Math.round(base*mult*levelBonus*dailyBonus);
+}
+function getXPReward(){
+  return {easy:15,medium:25,hard:40}[currentQ.diff]||15;
+}
+
+function checkLevelUp(){
+  const xpNeeded = state.level*100;
+  if(state.xp>=xpNeeded){
+    state.xp -= xpNeeded;
+    state.level++;
+    document.getElementById('levelup-text').innerHTML = `You reached Level ${state.level}!<br>Keep mastering PAES! 🌾`;
+    document.getElementById('levelup-overlay').classList.add('show');
+  }
+}
+function closeLevelUp(){
+  document.getElementById('levelup-overlay').classList.remove('show');
+}
+
+function nextQuestion(){
+  if(isDaily && qIndex>=10){
+    document.getElementById('nav-bar').style.display='';
+    showScreen('home');
+    showToast("Daily Challenge complete! 🎉 Great work!");
+    return;
+  }
+  loadQuestion();
+}
+
+function updateQuizHeader(){
+  document.getElementById('q-level').textContent = state.level;
+  document.getElementById('q-coins').textContent = state.coins;
+  const xpNeeded = state.level*100;
+  const pct = Math.min(100,Math.round((state.xp/xpNeeded)*100));
+  document.getElementById('xp-bar').style.width = pct+'%';
+  document.getElementById('q-xp').textContent = state.xp;
+  document.getElementById('q-xp-next').textContent = xpNeeded;
+}
+
+function useHint(type){
+  if(answered) return;
+  if(type==='elim'){
+    if(state.hints.elimCount<=0&&state.coins<30){showToast("Not enough coins or hints! Buy more in the Shop.");return;}
+    if(state.hints.elimCount>0) state.hints.elimCount--;
+    else if(state.coins>=30) state.coins-=30;
+    // eliminate 2 wrong choices
+    const choices = document.querySelectorAll('.choice');
+    let eliminated=0;
+    choices.forEach((ch,i)=>{
+      if(eliminated>=2||ch.classList.contains('eliminated')) return;
+      if(currentQ._shuffled[i].origIdx!==currentQ.ans){
+        ch.classList.add('eliminated'); eliminated++;
+      }
+    });
+  } else if(type==='clue'){
+    if(state.hints.clueCount<=0&&state.coins<20){showToast("Not enough coins or hints!");return;}
+    if(state.hints.clueCount>0) state.hints.clueCount--;
+    else if(state.coins>=20) state.coins-=20;
+    const kws = currentQ.exp.split(' ').slice(0,8).join(' ')+'...';
+    showToast('💡 Clue: "'+kws+'"');
+  } else if(type==='skip'){
+    if(state.hints.skipCount<=0&&state.coins<50){showToast("Not enough coins or hints!");return;}
+    if(state.hints.skipCount>0) state.hints.skipCount--;
+    else if(state.coins>=50) state.coins-=50;
+    state.streak=0;
+    loadQuestion();
+    return;
+  }
+  saveState();
+  updateQuizHeader();
+}
+
+function showCoinPopup(amt){
+  const el = document.getElementById('coin-popup');
+  document.getElementById('coin-popup-amt').textContent = amt;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1500);
+}
+function showStreakBadge(){
+  const el = document.getElementById('streak-badge');
+  document.getElementById('streak-num').textContent = state.streak;
+  el.style.display='block';
+  setTimeout(()=>el.style.display='none',2000);
+}
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+function renderShop(){
+  document.getElementById('shop-coins').textContent = state.coins;
+  const container = document.getElementById('shop-items');
+  container.innerHTML = '';
+  SHOP_ITEMS.forEach(item=>{
+    const count = state.hints[item.countKey]||0;
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    div.innerHTML = `
+      <div class="shop-icon">${item.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${item.name}</div>
+        <div class="shop-desc">${item.desc}</div>
+        <div class="shop-count">Owned: ${count}</div>
+      </div>
+      <button class="buy-btn" onclick="buyItem('${item.id}')">🪙 ${item.cost}</button>
+    `;
+    container.appendChild(div);
+  });
+}
+function buyItem(id){
+  const item = SHOP_ITEMS.find(i=>i.id===id);
+  if(!item) return;
+  if(state.coins<item.cost){showToast("Not enough coins! Keep answering correctly.");return;}
+  state.coins-=item.cost;
+  state.hints[item.countKey]=(state.hints[item.countKey]||0)+1;
+  saveState();
+  renderShop();
+  showToast(`${item.icon} ${item.name} purchased!`);
+}
+
+function renderAchievements(){
+  const grid = document.getElementById('ach-grid');
+  grid.innerHTML = '';
+  ACHIEVEMENTS.forEach(a=>{
+    const unlocked = state.achievements[a.id];
+    let progress = 0, total = a.val;
+    if(a.type==='correct') progress = state.totalCorrect;
+    else if(a.type==='streak') progress = state.bestStreak;
+    else if(a.type==='coinsTotal') progress = state.totalCoinsEarned;
+    else if(a.type==='catCorrect') progress = state.catCorrect[a.cat]||0;
+    else if(a.type==='level') progress = state.level;
+    const pct = Math.min(100,Math.round((progress/total)*100));
+    const div = document.createElement('div');
+    div.className = 'ach-card'+(unlocked?' unlocked':'');
+    div.innerHTML = `
+      <span class="ach-icon">${a.icon}</span>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${a.desc}</div>
+      <div class="ach-prog">${unlocked?'✅ Unlocked':progress+' / '+total+' ('+pct+'%)'}</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(a=>{
+    if(state.achievements[a.id]) return;
+    let val=0;
+    if(a.type==='correct') val=state.totalCorrect;
+    else if(a.type==='streak') val=state.bestStreak;
+    else if(a.type==='coinsTotal') val=state.totalCoinsEarned;
+    else if(a.type==='catCorrect') val=state.catCorrect[a.cat]||0;
+    else if(a.type==='level') val=state.level;
+    if(val>=a.val){
+      state.achievements[a.id]=true;
+      setTimeout(()=>showToast('🏅 Achievement Unlocked: '+a.name+'!'),500);
+    }
+  });
+}
+
+function renderProfile(){
+  document.getElementById('p-level').textContent = state.level;
+  document.getElementById('p-answered').textContent = state.totalAnswered;
+  document.getElementById('p-correct').textContent = state.totalCorrect;
+  document.getElementById('p-coins-total').textContent = state.totalCoinsEarned;
+  document.getElementById('p-best-streak').textContent = state.bestStreak;
+  const xpNeeded = state.level*100;
+  const pct = Math.min(100,Math.round((state.xp/xpNeeded)*100));
+  document.getElementById('p-xp-bar').style.width = pct+'%';
+  document.getElementById('p-xp-label').textContent = state.xp+'/'+xpNeeded+' XP';
+  
+  const container = document.getElementById('p-cat-progress');
+  container.innerHTML = '';
+  CATEGORIES.slice(1).forEach(c=>{
+    const correct = state.catCorrect[c.name]||0;
+    const total = state.catAnswered[c.name]||0;
+    const pct2 = total>0?Math.round((correct/total)*100):0;
+    const div = document.createElement('div');
+    div.className = 'cat-progress';
+    div.innerHTML = `
+      <div class="cat-row">
+        <div class="cat-name">${c.icon} ${c.name}</div>
+        <div class="cat-pct">${correct} correct</div>
+      </div>
+      <div class="cat-bar"><div class="cat-bar-fill" style="width:${pct2}%"></div></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+updateHomeStats();
+</script>
+
+<script>
+  // Register Service Worker for PWA
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("✅ PAES Quest: Service Worker registered!", reg.scope))
+        .catch(err => console.log("❌ Service Worker error:", err));
+    });
+  }
+</script>
+</body>
+</html>
